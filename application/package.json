@@ -1,0 +1,29 @@
+{
+  "name": "titan-solana-mvp",
+  "version": "2.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "node ../scripts/seed.js",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "T.I.T.A.N supply-chain telemetry MVP using Solana Devnet",
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "axios": "^1.8.4",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "leaflet": "^1.9.4",
+    "nodemailer": "^8.0.10",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
+    "react-leaflet": "^5.0.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.22"
+  }
+}

@@ -1,0 +1,173 @@
+### =================================================================
+### ZWISCHENTEST: ONBOARDING & LIMIT-SETZUNG
+### =================================================================
+# 192.169.1.200 
+@baseUrl = http://192.168.1.204:3000
+@adminKey = MASTER_ADMIN_2026
+@newSupplierKey = SUPPLIER_C_CHECK
+@newSupplierName = Lieferant_s
+@deliveryId = SHIP-2026_003
+@sensorHardwareId = ESP_001
+
+### -----------------------------------------------------------------
+### SCHRITT 1: Lieferant im System aufnehmen (ADMIN-AKTION)
+### -----------------------------------------------------------------
+# Erstellt den Account in SQLite und das SUPPLIER-Asset auf der Blockchain
+### SCHRITT 1: Lieferant im System aufnehmen
+POST {{baseUrl}}/api/admin/onboard-supplier
+x-api-key: {{adminKey}}
+Content-Type: application/json
+
+{
+    "supplierName": "{{newSupplierName}}",
+    "apiKey": "{{newSupplierKey}}",
+    "email": "gianluca.walczak@student.htw-berlin.de"
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 2: Lieferung registrieren (SUPPLIER-AKTION)
+### -----------------------------------------------------------------
+# Der Lieferant nutzt SEINEN neuen Key.
+# Status in DB wird 'PENDING_LIMITS'. Blockchain initialisiert die Lieferung.
+POST {{baseUrl}}/api/supplier/initiate-delivery
+x-api-key: {{newSupplierKey}}
+Content-Type: application/json
+
+{
+    "hardwareId": "{{sensorHardwareId}}",
+    "deliveryId": "{{deliveryId}}"
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 2 (ALTERNATIV): Lieferung registrieren (ADMIN-AKTION)
+### -----------------------------------------------------------------
+# Der Admin initialisiert die Lieferung und weist sie einem Lieferanten zu.
+# Status in DB wird 'PENDING_LIMITS'. Blockchain initialisiert die Lieferung.
+POST {{baseUrl}}/api/admin/initiate-delivery
+x-api-key: {{adminKey}}
+Content-Type: application/json
+
+{
+    "hardwareId": "{{sensorHardwareId}}",
+    "deliveryId": "{{deliveryId}}",
+    "supplierName": "{{newSupplierName}}"
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 3: Grenzwerte setzen (ADMIN-AKTION)
+### -----------------------------------------------------------------
+# Admin setzt die Grenzwerte für die Lieferung.
+# Status in DB wird 'LIMITS_SET_BY_ADMIN'. Blockchain speichert LIMIT-Composite-Key.
+POST {{baseUrl}}/api/admin/set-limit/{{newSupplierName}}/{{deliveryId}}
+x-api-key: {{adminKey}}
+Content-Type: application/json
+
+{
+    "maxTemp": 8.0,
+    "minTemp": 2.0,
+    "maxHum": 60.0,
+    "minHum": 40.0
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 4: Grenzwerte bestätigen (SUPPLIER-AKTION)
+### -----------------------------------------------------------------
+# Supplier bestätigt die vom Admin gesetzten Grenzwerte.
+# Status in DB wird 'IN_TRANSIT'. Blockchain speichert Bestätigungszeitpunkt.
+POST {{baseUrl}}/api/supplier/confirm-limits/{{deliveryId}}
+x-api-key: {{newSupplierKey}}
+
+### -----------------------------------------------------------------
+### SCHRITT 5a: Sensordaten einspeisen (GATEWAY/ESP8266 AKTION)
+### -----------------------------------------------------------------
+# Simuliert den ESP8266, der Daten an das Gateway sendet.
+# Das Gateway prüft gegen die versiegelten Limits aus Schritt 3.
+### SCHRITT 5a: Sensordaten einspeisen
+POST {{baseUrl}}/api/buffer
+x-api-key: {{newSupplierKey}}
+Content-Type: application/json
+
+{
+    "sensorId": "{{sensorHardwareId}}",
+    "temperature": 2.5,
+    "humidity": 50.0,
+    "lat": 52.5200,
+    "lon": 13.4050,
+    "timestamp": "2026-03-19T18:00:00Z"
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 5b: Fiktive dynamische Sensordaten generieren (DEVELOPER AKTION)
+### -----------------------------------------------------------------
+# Generiert zufällige, logische Sensordaten für die Lieferung.
+# Simuliert eine Fahrt auf der Berlin-Ludwigshafen Route mit GPS-Jitter.
+# Parameter 'count' bestimmt wie viele Messwerte gleichzeitig gesendet werden (Standard: 10, Max: 100)
+POST {{baseUrl}}/api/dev/generate-reading
+Content-Type: application/json
+
+{
+    "deliveryId": "123A",
+    "supplierName": "Logistik_Pro_A",
+    "sensorId": "Logistik_Pro_A_092",
+    "apiKey": "KEY_PRO_A",
+    "count": 10
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 6: Alarme prüfen (SUPPLIER-ANSICHT)
+### -----------------------------------------------------------------
+# Der Lieferant prüft, ob Grenzwerte überschritten wurden.
+GET {{baseUrl}}/api/supplier/alerts
+x-api-key: {{newSupplierKey}}
+
+### -----------------------------------------------------------------
+### SCHRITT 7: Historie abrufen (SUPPLIER-ANSICHT)
+### -----------------------------------------------------------------
+# Spezifische Historie für die Test-Lieferung.
+GET {{baseUrl}}/api/supplier/history/{{deliveryId}}
+x-api-key: {{newSupplierKey}}
+
+### -----------------------------------------------------------------
+### SCHRITT 8: Historie als Admin abrufen (ADMIN-ANSICHT)
+### -----------------------------------------------------------------
+# Der Admin kann die gleiche Lieferung ebenfalls einsehen.
+GET {{baseUrl}}/api/admin/history/{{newSupplierName}}/{{deliveryId}}
+x-api-key: {{adminKey}}
+
+### -----------------------------------------------------------------
+### SCHRITT 9: Globale Überwachung (ADMIN-ANSICHT)
+### -----------------------------------------------------------------
+# Der Admin (Großunternehmen) sieht ALLE Alarme systemweit.
+GET {{baseUrl}}/api/admin/alerts
+x-api-key: {{adminKey}}
+
+### -----------------------------------------------------------------
+### SCHRITT 10: Erhalt bestätigen (Admin/Empfänger)
+### -----------------------------------------------------------------
+POST {{baseUrl}}/api/admin/confirm-receipt/{{newSupplierName}}/{{deliveryId}}
+x-api-key: {{adminKey}}
+Content-Type: application/json
+
+{
+    "recipientName": "BASF Zentrallager Ludwigshafen"
+}
+
+### -----------------------------------------------------------------
+### SCHRITT 11: Lieferung finalisieren (Admin/Supplier)
+### -----------------------------------------------------------------
+POST {{baseUrl}}/api/admin/final-checkout/{{newSupplierName}}/{{deliveryId}}
+x-api-key: {{adminKey}}
+
+app.get('/api/supplier/:supplier/audit/:deliveryId', supplierAuth, async (req, res) => {
+
+
+###
+GET {{baseUrl}}/api/supplier/{{newSupplierName}}/audit/{{deliveryId}}
+x-api-key: {{newSupplierKey}}
+Content-Type: application/json
+
+### SCHRITT 12: Report Download (ADMIN-Sicht)
+# Ersetze {{deliveryId}} durch eine ID, die bereits im Status 'CLOSED' ist
+GET {{baseUrl}}/api/admin/download-report/SHIP-2026-B-TEST
+x-api-key: MASTER_ADMIN_2026
+Content-Type: application/json

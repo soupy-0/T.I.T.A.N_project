@@ -1,0 +1,15 @@
+.env
+**/.env
+**/node_modules/
+**/sensor_data.db
+**/*.sqlite
+**/*.sqlite3
+**/wallet/
+**/*keypair*.json
+**/id.json
+npm-debug.log*
+.DS_Store
+.env
+.env.*
+!.env.example
+node_modules/
