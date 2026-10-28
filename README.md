@@ -77,3 +77,5 @@ See [`application/.env.example`](application/.env.example). Never commit `.env`,
 - The existing delivery workflow adapter records workflow mutations as signed Solana memo events, while SQL remains the queryable state source. This is not a custom Solana smart contract/program.
 - A valid Solana keypair and devnet SOL are required for actual on-chain writes. Without a wallet, delivery workflows can be demoed in local-only mode, but no on-chain transaction is sent and selected sensor readings remain pending.
 - Before production: rotate demo API keys, move secrets to a secret manager, add HTTPS termination, stronger rate limits and request authentication, and run integration tests against a funded Devnet wallet.
+
+YouTube Video showcasing MVP functionality: https://youtu.be/nqDty2X2tB0 
